@@ -10,5 +10,5 @@ public class BaseFeedbackItemResult<TModel> where TModel : class
 {
     public int TotalItemCount { get; set; }
     public int TotalPageCount { get; set; }
-    public IEnumerable<TModel> Courses { get; set; } = new List<TModel>();
+    public IEnumerable<TModel> Items { get; set; } = new List<TModel>();
 }

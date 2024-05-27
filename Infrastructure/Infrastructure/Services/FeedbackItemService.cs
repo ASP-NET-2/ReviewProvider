@@ -112,27 +112,42 @@ public class FeedbackItemService(ReviewRepository reviewRepo, RatingRepository r
 
             var result = new BaseFeedbackItemResult<ReviewModel>();
 
+            int totalItemCount = await query.CountAsync();
+            int totalPageCount = 0;
+
             if (qModel.PageQuery != null)
             {
                 PageQuery pageQ = qModel.PageQuery.Value;
-                int totalItemCount = await query.CountAsync();
+                
                 if (totalItemCount > 0)
                 {
+                    totalPageCount = (int)Math.Ceiling(totalItemCount / (decimal)pageQ.PageSize);
+
                     int takeCount = qModel.MaxItemCount != null 
                         ? Math.Min(pageQ.PageSize, qModel.MaxItemCount.Value)
                         : pageQ.PageSize;
 
-                    query = query.Skip((pageQ.PageNumber - 1) * pageQ.PageSize).Take(pageQ.PageSize);
-
-                    var list = await query.ToListAsync();
-                    
-                    var resultList = new List<ReviewModel>();
-                    foreach (var item in list) 
-                    {
-                        resultList.Add(ReviewModelFactory.Create(item));
-                    }
+                    query = query.Skip((pageQ.PageNumber - 1) * pageQ.PageSize).Take(takeCount);
                 }
             }
+            else if (qModel.MaxItemCount != null)
+            {
+                query = query.Take(qModel.MaxItemCount.Value);
+            }
+
+            var list = await query.ToListAsync();
+
+            var resultList = new List<ReviewModel>();
+            foreach (var item in list)
+            {
+                resultList.Add(ReviewModelFactory.Create(item));
+            }
+
+            result.TotalItemCount = totalItemCount;
+            result.TotalPageCount = totalPageCount;
+            result.Items = resultList;
+
+            return new ProcessResult<BaseFeedbackItemResult<ReviewModel>>(StatusCodes.Status200OK, "", result);
         }
         catch (Exception ex) { return ProduceCatchError(ex).ToGeneric<BaseFeedbackItemResult<ReviewModel>>(); }
     }
