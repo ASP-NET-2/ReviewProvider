@@ -4,12 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Infrastructure.Models;
+namespace Infrastructure.Models.RequestModels;
 
-public class BaseFeedbackItemModel
+public class ReviewGetRequestModel
 {
     public string ProductId { get; set; } = null!;
     public string UserId { get; set; } = null!;
-    public DateTime OriginallyPostedDate { get; set; } = DateTime.UtcNow;
-    public DateTime LastUpdatedDate { get; set; } = DateTime.UtcNow;
+    public bool IncludeReview { get; set; }
 }

@@ -22,9 +22,8 @@ var host = new HostBuilder()
         }).AddEntityFrameworkStores<IdentityDataContext>();
 
         services.AddSingleton<ReviewRepository>();
-        services.AddSingleton<RatingRepository>();
-
-        services.AddSingleton<FeedbackItemService>();
+        services.AddSingleton<ReviewCrudService>();
+        services.AddSingleton<ReviewService>();
     })
     .Build();
 

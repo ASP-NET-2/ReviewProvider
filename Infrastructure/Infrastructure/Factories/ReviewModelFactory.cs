@@ -1,5 +1,5 @@
 ﻿using Infrastructure.Entities;
-using Infrastructure.Models;
+using Infrastructure.Models.EntityModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,12 +14,18 @@ public static class ReviewModelFactory
     {
         return new ReviewModel
         {
-            ProductId = entity.ProductId,
-            LastUpdatedDate = entity.LastUpdatedDate,
-            OriginallyPostedDate = entity.OriginallyPostedDate,
-            ReviewText = entity.ReviewText,
-            ReviewTitle = entity.ReviewTitle,
             UserId = entity.UserId,
+            ProductId = entity.ProductId,
+            ReviewText = entity.ReviewText != null
+                    ? new ReviewTextModel
+                    {
+                        ReviewTitle = entity.ReviewText.ReviewTitle,
+                        ReviewText = entity.ReviewText.ReviewText
+
+                    } : null,
+            Rating = entity.Rating,
+            OriginallyPostedDate = entity.OriginallyPostedDate,
+            LastUpdatedDate = entity.LastUpdatedDate,
         };
     }
 }

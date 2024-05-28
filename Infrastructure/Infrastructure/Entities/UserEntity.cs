@@ -4,5 +4,5 @@ namespace Infrastructure.Entities;
 
 public class UserEntity : IdentityUser
 {
-    //public 
+
 }

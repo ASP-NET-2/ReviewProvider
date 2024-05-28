@@ -1,25 +1,38 @@
-﻿using Infrastructure.Entities;
-using Infrastructure.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿//using Infrastructure.Entities;
+//using Infrastructure.Models.EntityModels;
+//using System;
+//using System.Collections.Generic;
+//using System.Linq;
+//using System.Text;
+//using System.Threading.Tasks;
 
-namespace Infrastructure.Factories;
+//namespace Infrastructure.Factories;
 
-public static class ReviewEntityFactory
-{
-    public static ReviewEntity Create(UserEntity user, ProductModel product, string reviewTitle, string reviewText)
-    {
-        ArgumentNullException.ThrowIfNull(product.Id);
+//public static class ReviewEntityFactory
+//{
+//    public static ReviewEntity CreateReview(string userId, string productId, ReviewModel model)
+//    {
+//        var entity = new ReviewEntity
+//        {
+//            ProductId = productId,
+//            UserId = userId,
+//            ReviewTitle = model.ReviewTitle,
+//            ReviewText = model.ReviewText,
+//        };
 
-        return new ReviewEntity
-        {
-            ProductId = product.Id,
-            UserId = user.Id,
-            ReviewTitle = reviewTitle,
-            ReviewText = reviewText
-        };
-    }
-}
+//        return entity;
+//    }
+
+//    public static ReviewEntity UpdateReview(ReviewEntity entity, ReviewModel model)
+//    {
+//        if (model.ReviewText != null)
+//        {
+//            entity.ReviewText = new ReviewTextEntity { r};
+//            entity.ReviewText.ReviewText = model.ReviewText.ReviewText;
+//        }
+//        entity.ReviewTitle = model.ReviewTitle;
+        
+//        entity.LastUpdatedDate = DateTime.UtcNow;
+//        return entity;
+//    }
+//}

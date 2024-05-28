@@ -4,6 +4,10 @@ namespace Infrastructure.Models.ResultModels;
 
 public class ProcessResult
 {
+    public static ProcessResult OKResult(string message) => new(StatusCodes.Status200OK, message);
+    public static ProcessResult<TObject> OKResult<TObject>(string message, TObject obj) => new(StatusCodes.Status200OK, message, obj);
+    public static ProcessResult CreatedResult(string message) => new(StatusCodes.Status201Created, message);
+    public static ProcessResult<TObject> CreatedResult<TObject>(string message, TObject obj) => new(StatusCodes.Status201Created, message, obj);
     public static ProcessResult BadRequestResult(string message) => new(StatusCodes.Status400BadRequest, message);
     public static ProcessResult ForbiddenResult(string message) => new(StatusCodes.Status403Forbidden, message);
     public static ProcessResult NotFoundResult(string message) => new(StatusCodes.Status404NotFound, message);

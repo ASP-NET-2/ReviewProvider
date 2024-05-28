@@ -1,15 +1,17 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿namespace Infrastructure.Models.EntityModels;
 
-namespace Infrastructure.Entities;
-
-public class ReviewEntity
+public class ReviewModel
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
     public string UserId { get; set; } = null!;
     public string ProductId { get; set; } = null!;
-    [Column(TypeName = "decimal(5,2)")]
+    public ReviewTextModel? ReviewText { get; set; }
     public decimal? Rating { get; set; }
-    public ReviewTextEntity? ReviewText { get; set; }
     public DateTime OriginallyPostedDate { get; set; } = DateTime.UtcNow;
     public DateTime LastUpdatedDate { get; set; } = DateTime.UtcNow;
+}
+
+public class ReviewTextModel
+{
+    public string ReviewTitle { get; set; } = null!;
+    public string ReviewText { get; set; } = null!;
 }
