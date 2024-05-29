@@ -62,7 +62,17 @@ public class ReviewCrudService(ReviewRepository reviewRepo, ReviewTextRepository
             entity.ProductId = model.ProductId;
 
             if (model.Rating != null)
-                entity.Rating = model.Rating;
+            {
+                var ratingEntity = new RatingEntity
+                {
+                    ReviewEntityId = entity.Id.ToString(),
+                    Rating = model.Rating.Value,
+                };
+
+                entity.Rating = entity.Rating != null
+                    ? await _ratingRepo.UpdateAsync(ratingEntity)
+                    : await _ratingRepo.CreateAsync(ratingEntity);
+            }
 
             if (model.ReviewText != null)
             {
@@ -90,5 +100,10 @@ public class ReviewCrudService(ReviewRepository reviewRepo, ReviewTextRepository
     public async Task<bool> DeleteTextAsync(ReviewTextEntity entity)
     {
         return await _reviewTextRepo.DeleteAsync(entity);
+    }
+
+    public async Task<bool> DeleteRatingAsync(RatingEntity entity)
+    {
+        return await _ratingRepo.DeleteAsync(entity);
     }
 }

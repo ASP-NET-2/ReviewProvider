@@ -256,7 +256,10 @@ public class ReviewService(ReviewRepository reviewRepo, ReviewCrudService review
 
             if (requestModel.DeleteRating)
             {
+                var review = entity.Rating;
                 entity.Rating = null;
+                if (review != null)
+                    await _reviewCrudService.DeleteRatingAsync(review);
             }
 
             if (requestModel.DeleteReview)

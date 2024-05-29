@@ -23,7 +23,7 @@ public static class ReviewModelFactory
                         ReviewText = entity.ReviewText.ReviewText
 
                     } : null,
-            Rating = entity.Rating,
+            Rating = entity.Rating != null ? entity.Rating.Rating : null,
             OriginallyPostedDate = entity.OriginallyPostedDate,
             LastUpdatedDate = entity.LastUpdatedDate,
         };
