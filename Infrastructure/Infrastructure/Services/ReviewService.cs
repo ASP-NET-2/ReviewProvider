@@ -84,7 +84,7 @@ public class ReviewService(ReviewRepository reviewRepo, ReviewCrudService review
         {
             if (userReview.Rating != null)
             {
-                rating += userReview.Rating.Value;
+                rating += userReview.Rating.Rating;
                 ratingCount++;
             }
 
@@ -215,8 +215,17 @@ public class ReviewService(ReviewRepository reviewRepo, ReviewCrudService review
                 resultList.Add(reviewModel);
             }
 
+            // Get rating and review count from rating review entity because
+            // these values are cached there. 
+            var ratingReviewEntity = await _ratingReviewRepo.GetAsync(x => x.ProductId == qModel.ProductId);
+            if (ratingReviewEntity == null)
+                return ProcessResult.InternalServerErrorResult("Rating Review Entity could not be found.")
+                    .ToGeneric<ReviewsResult>();
+
             result.TotalItemCount = totalItemCount;
             result.TotalPageCount = totalPageCount;
+            result.ReviewCount = ratingReviewEntity.ReviewCount;
+            result.RatingCount = ratingReviewEntity.RatingCount;
             result.Items = resultList;
 
             return new ProcessResult<ReviewsResult>(StatusCodes.Status200OK, "", result);

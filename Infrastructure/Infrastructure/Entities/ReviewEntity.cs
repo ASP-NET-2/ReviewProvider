@@ -8,7 +8,7 @@ public class ReviewEntity
     public string UserId { get; set; } = null!;
     public string ProductId { get; set; } = null!;
     [Column(TypeName = "decimal(5,2)")]
-    public decimal? Rating { get; set; }
+    public RatingEntity? Rating { get; set; }
     public ReviewTextEntity? ReviewText { get; set; }
     public DateTime OriginallyPostedDate { get; set; } = DateTime.UtcNow;
     public DateTime LastUpdatedDate { get; set; } = DateTime.UtcNow;

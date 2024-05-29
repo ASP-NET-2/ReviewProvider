@@ -11,5 +11,7 @@ public class ReviewsResult
 {
     public int TotalItemCount { get; set; }
     public int TotalPageCount { get; set; }
+    public int ReviewCount { get; set; }
+    public int RatingCount { get; set; }
     public IEnumerable<ReviewModel> Items { get; set; } = new List<ReviewModel>();
 }

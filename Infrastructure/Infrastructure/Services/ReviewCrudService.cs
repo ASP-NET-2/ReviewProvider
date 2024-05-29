@@ -10,10 +10,11 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Services;
 
-public class ReviewCrudService(ReviewRepository reviewRepo, ReviewTextRepository reviewTextRepo)
+public class ReviewCrudService(ReviewRepository reviewRepo, ReviewTextRepository reviewTextRepo, RatingRepository ratingRepo)
 {
     private readonly ReviewRepository _reviewRepo = reviewRepo;
     private readonly ReviewTextRepository _reviewTextRepo = reviewTextRepo;
+    private readonly RatingRepository _ratingRepo = ratingRepo;
 
     public async Task<ReviewEntity> CreateAsync(ReviewModel model)
     {
@@ -24,9 +25,17 @@ public class ReviewCrudService(ReviewRepository reviewRepo, ReviewTextRepository
                 UserId = model.UserId,
                 ProductId = model.ProductId,
                 OriginallyPostedDate = model.OriginallyPostedDate,
-                Rating = model.Rating,
                 LastUpdatedDate = model.LastUpdatedDate,
             };
+
+            var rating = model.Rating != null
+                ? await _ratingRepo.CreateAsync(new RatingEntity
+                {
+                    ReviewEntityId = entity.Id.ToString(),
+                    Rating = model.Rating.Value,
+                }) : null;
+
+            entity.Rating = rating;
 
             var reviewText = model.ReviewText != null
                 ? await _reviewTextRepo.CreateAsync(new ReviewTextEntity

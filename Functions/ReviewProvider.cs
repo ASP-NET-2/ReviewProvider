@@ -70,7 +70,7 @@ public class ReviewProvider(ILogger<ReviewProvider> logger, ReviewService review
     }
 
     [Function("DeleteReviewAndOrRating")]
-    public async Task<IActionResult> DeleteRatingAndOrReview([HttpTrigger(AuthorizationLevel.Function, "delete")] HttpRequest req)
+    public async Task<IActionResult> DeleteReviewAndOrRating([HttpTrigger(AuthorizationLevel.Function, "delete")] HttpRequest req)
     {
         try
         {
