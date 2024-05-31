@@ -21,11 +21,12 @@ var host = new HostBuilder()
         {
         }).AddEntityFrameworkStores<IdentityDataContext>();
 
-        services.AddSingleton<ReviewTextRepository>();
-        services.AddSingleton<RatingRepository>();
         services.AddSingleton<ReviewRepository>();
+        services.AddSingleton<RatingRepository>();
+        services.AddSingleton<UserFeedbackRepository>();
+        services.AddSingleton<ProductFeedbackRepository>();
         
-        services.AddSingleton<ReviewCrudService>();
+        services.AddSingleton<FeedbackActionsService>();
         services.AddSingleton<ReviewService>();
     })
     .Build();

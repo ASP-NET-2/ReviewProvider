@@ -18,12 +18,10 @@ namespace Infrastructure.Services;
 /// <summary>
 /// Service that manages reviews and ratings.
 /// </summary>
-public class ReviewService(ReviewRepository reviewRepo, ReviewCrudService reviewCrudService, ProductRatingReviewRepository ratingReviewRepo,
+public class ReviewService(FeedbackActionsService feedbackActionsService,
     UserManager<UserEntity> userManager, SignInManager<UserEntity> signInManager, HttpClient httpClient, IConfiguration config)
 {
-    private readonly ReviewRepository _reviewRepo = reviewRepo;
-    private readonly ReviewCrudService _reviewCrudService = reviewCrudService;
-    private readonly ProductRatingReviewRepository _ratingReviewRepo = ratingReviewRepo;
+    private readonly FeedbackActionsService _feedbackActionsService = feedbackActionsService;
     private readonly UserManager<UserEntity> _userManager = userManager;
     private readonly SignInManager<UserEntity> _signInManager = signInManager;
     private readonly HttpClient _httpClient = httpClient;
@@ -51,138 +49,92 @@ public class ReviewService(ReviewRepository reviewRepo, ReviewCrudService review
         return entity;
     }
 
-    /// <summary>
-    /// Gets the ProductReviewRatingEntity for the specified product.
-    /// If one doesn't exist (possibly if the topic trigger somehow fails),
-    /// creates a new one in the database and returns that one instead.
-    /// </summary>
-    private async Task<ProductReviewRatingEntity> GetProductReviewRatingEntity(ProductModel product)
-    {
-        try
-        {
-            var entity = await _ratingReviewRepo.GetAsync(x =>  x.ProductId == product.Id, true);
-            entity ??= await _ratingReviewRepo.CreateAsync(new ProductReviewRatingEntity { ProductId = product.Id! });
-            
-            return entity!;
-        }
-        catch (Exception ex) { Debug.WriteLine(ex.Message); }
-        
-        return null!;
-    }
-
-    /// <summary>
-    /// Applies the average rating score of the product.
-    /// </summary>
-    private ProductReviewRatingEntity UpdateAverageProductRating(ProductReviewRatingEntity entity)
-    {
-        // First calculate average rating.
-        decimal rating = 0;
-        int reviewCount = 0;
-        int ratingCount = 0;
-
-        foreach (var userReview in entity.UserReviews)
-        {
-            if (userReview.Rating != null)
-            {
-                rating += userReview.Rating.Rating;
-                ratingCount++;
-            }
-
-            if (userReview.ReviewText != null)
-            {
-                reviewCount++;
-            }
-        }
-
-        if (ratingCount > 0)
-            rating /= (decimal)ratingCount;
-
-        entity.AverageRating = rating;
-        entity.ReviewCount = reviewCount;
-        entity.RatingCount = ratingCount;
-
-        return entity;
-    }
-
     #endregion
 
-    #region Review
-
-    public async Task<ProcessResult<ReviewEntity>> ReviewProductAsync(ReviewRequestModel requestModel)
+    public async Task<ProcessResult> ReviewProductAsync(ReviewRequestModel requestModel)
     {
         try
         {
-            if (requestModel.Review == null || requestModel.Review.Rating == null 
-                || requestModel.Review.ReviewText == null)
-                return ProcessResult.ForbiddenResult("No rating or review was provided.")
-                    .ToGeneric<ReviewEntity>();
+            if (requestModel.ReviewText == null || requestModel.ReviewTitle == null)
+                return ProcessResult.ForbiddenResult("Empty reviews are not allowed.");
 
             // Get user, we need both its ID and to ensure that they're logged in.
             var user = await EnsureUserLoggedIn(requestModel.UserClaims);
+
             if (user == null)
-                return ProcessResult.ForbiddenResult("User must prove that they're logged in to leave a review.")
-                    .ToGeneric<ReviewEntity>();
+            {
+                return ProcessResult.ForbiddenResult("User must prove that they're logged in to leave a review.");
+            }
 
             string productId = requestModel.ProductId;
 
             // Ensure that product exists.
             var product = await _httpClient.GetFromJsonAsync<ProductModel>($"{_config["SingleProductUrl"]}/{productId}");
-            
             if (product == null)
-                return ProcessResult.NotFoundResult("The product being reviewed does not/no longer exists.").ToGeneric<ReviewEntity>();
-
-            var reviewRatingEntity = await GetProductReviewRatingEntity(product);
-
-            var review = reviewRatingEntity.UserReviews.FirstOrDefault(x => x.ProductId == productId);
-
-            // If review already exists, update the entity instead.
-            if (review != null)
             {
-                review = await _reviewCrudService.UpdateAsync(review, requestModel.Review);
-            }
-            else
-            {
-                review = await _reviewCrudService.CreateAsync(requestModel.Review);
-                reviewRatingEntity.UserReviews.Add(review);
+                return ProcessResult.NotFoundResult("The product being reviewed could not be found. The server could not be contacted, or the product does not/no longer exists.");
             }
 
-            if (review == null)
-                return ProcessResult.InternalServerErrorResult("Something went wrong when trying to store the review.").ToGeneric<ReviewEntity>();
+            var reviewModel = new ReviewModel
+            {
+                ReviewTitle = requestModel.ReviewTitle,
+                ReviewText = requestModel.ReviewText,
+            };
+            await _feedbackActionsService.ReviewProductAsync(productId, user.Id, reviewModel);
 
-            await _ratingReviewRepo.UpdateAsync(UpdateAverageProductRating(reviewRatingEntity));
-
-            return ProcessResult.CreatedResult("Review successfully stored.", review);
+            return ProcessResult.CreatedResult("Review successfully stored.");
         }
-        catch (Exception ex) { return ProduceCatchError(ex).ToGeneric<ReviewEntity>(); }
+        catch (Exception ex) { return ProduceCatchError(ex); }
     }
 
-    public async Task<ProcessResult<ReviewsResult>> GetAllReviewsOfProductAsync(ReviewsGetRequestModel qModel)
+    public async Task<ProcessResult> RateProductAsync(RatingRequestModel requestModel)
+    {
+        try
+        {
+            // Get user, we need both its ID and to ensure that they're logged in.
+            var user = await EnsureUserLoggedIn(requestModel.UserClaims);
+
+            if (user == null)
+            {
+                return ProcessResult.ForbiddenResult("User must prove that they're logged in to leave a review.");
+            }
+
+            string productId = requestModel.ProductId;
+
+            // Ensure that product exists.
+            var product = await _httpClient.GetFromJsonAsync<ProductModel>($"{_config["SingleProductUrl"]}/{productId}");
+            if (product == null)
+            {
+                return ProcessResult.NotFoundResult("The product being reviewed could not be found. The server could not be contacted, or the product does not/no longer exists.")
+                    .ToGeneric<UserFeedbackEntity>();
+            }
+
+            var ratingModel = new RatingModel
+            {
+                Rating = requestModel.Rating.Rating,
+            };
+            await _feedbackActionsService.RateProductAsync(productId, user.Id, ratingModel);
+
+            return ProcessResult.CreatedResult("Review successfully stored.");
+        }
+        catch (Exception ex) { return ProduceCatchError(ex).ToGeneric<UserFeedbackEntity>(); }
+    }
+
+    public async Task<ProcessResult<UserFeedbacksResult>> GetAllUserFeedbacksOfProductAsync(UserFeedbacksGetRequestModel qModel)
     {
         try
         {
             if (qModel.ProductId == null && qModel.ByUserId == null)
-                return new ProcessResult<ReviewsResult>(StatusCodes.Status200OK, "ProductId and ByUserId are both null. Returning empty list.", new());
+                return new ProcessResult<UserFeedbacksResult>(StatusCodes.Status200OK, "ProductId and ByUserId are both null. Returning empty list.", new());
 
-            var query = _reviewRepo.GetSet(false);
+            var result = new UserFeedbacksResult();
 
-            if (qModel.ProductId != null)
-            {
-                query = query.Where(x => x.ProductId == qModel.ProductId);
-            }
-
-            if (qModel.ByUserId != null)
-            {
-                query = query.Where(x => x.UserId == qModel.ByUserId);
-            }
-
-            query = query.OrderByDescending(x => x.OriginallyPostedDate);
-
-            var result = new ReviewsResult();
-
-            int totalItemCount = await query.CountAsync();
+            int totalItemCount = await _feedbackActionsService.GetFeedbackInfoCountAsync(qModel.ProductId, qModel.ByUserId);
             int totalPageCount = 0;
 
             // If for pagination, get the items for that page.
+            int startIndex = 0;
+            int? takeCount = qModel.MaxItemCount;
             if (qModel.PageQuery != null)
             {
                 GetRequestPageQuery pageQ = qModel.PageQuery.Value;
@@ -191,95 +143,83 @@ public class ReviewService(ReviewRepository reviewRepo, ReviewCrudService review
                 {
                     totalPageCount = (int)Math.Ceiling(totalItemCount / (decimal)pageQ.PageSize);
 
-                    int takeCount = qModel.MaxItemCount != null
+                    takeCount = qModel.MaxItemCount != null
                         ? Math.Min(pageQ.PageSize, qModel.MaxItemCount.Value)
                         : pageQ.PageSize;
 
-                    query = query.Skip((pageQ.PageNumber - 1) * pageQ.PageSize).Take(takeCount);
+                    startIndex = pageQ.PageSize * (pageQ.PageNumber - 1);
                 }
             }
-            else if (qModel.MaxItemCount != null)
-            {
-                query = query.Take(qModel.MaxItemCount.Value);
-            }
 
-            var list = await query.ToListAsync();
-
-            var resultList = new HashSet<ReviewModel>();
-
-            // Now add the reviews to the list. If we should include ,
-            // ratings add those as well.
-            foreach (var item in list)
-            {
-                var reviewModel = ReviewModelFactory.Create(item);
-                resultList.Add(reviewModel);
-            }
-
-            // Get rating and review count from rating review entity because
-            // these values are cached there. 
-            var ratingReviewEntity = await _ratingReviewRepo.GetAsync(x => x.ProductId == qModel.ProductId);
-            if (ratingReviewEntity == null)
-                return ProcessResult.InternalServerErrorResult("Rating Review Entity could not be found.")
-                    .ToGeneric<ReviewsResult>();
+            var list = await _feedbackActionsService.GetUserFeedbacksAsync(qModel.ProductId, qModel.ByUserId, 
+                startIndex, takeCount, qModel.IncludeReviews, qModel.IncludeRatings);
 
             result.TotalItemCount = totalItemCount;
             result.TotalPageCount = totalPageCount;
-            result.ReviewCount = ratingReviewEntity.ReviewCount;
-            result.RatingCount = ratingReviewEntity.RatingCount;
-            result.Items = resultList;
+            result.UserFeedbacks = list;
 
-            return new ProcessResult<ReviewsResult>(StatusCodes.Status200OK, "", result);
+            return new ProcessResult<UserFeedbacksResult>(StatusCodes.Status200OK, "", result);
         }
-        catch (Exception ex) { return ProduceCatchError(ex).ToGeneric<ReviewsResult>(); }
+        catch (Exception ex) { return ProduceCatchError(ex).ToGeneric<UserFeedbacksResult>(); }
     }
 
-    public async Task<ProcessResult<ReviewModel>> GetReviewAsync(ReviewGetRequestModel requestModel)
+    public async Task<ProcessResult<UserFeedbackModel?>> GetUserFeedbackAsync(ReviewGetRequestModel requestModel)
     {
         try
         {
-            var entity = await _reviewRepo.GetAsync(x => x.ProductId == requestModel.ProductId && x.UserId == requestModel.UserId, requestModel.IncludeReview);
-            if (entity == null)
-                return ProcessResult.NotFoundResult("Could not find a review of specified product by specified user.").ToGeneric<ReviewModel>();
+            var model = await _feedbackActionsService.GetUserFeedbackAsync(requestModel.ProductId, requestModel.UserId);
 
-            return ProcessResult.OKResult("", ReviewModelFactory.Create(entity));
+            return ProcessResult.OKResult("", model);
         }
-        catch (Exception ex) { return ProduceCatchError(ex).ToGeneric<ReviewModel>(); }
+        catch (Exception ex) { return ProduceCatchError(ex).ToGeneric<UserFeedbackModel?>(); }
     }
 
-    public async Task<ProcessResult> DeleteReviewAndOrRatingAsync(ReviewDeleteRequestModel requestModel)
+    public async Task<ProcessResult> DeleteReviewAsync(FeedbackDeleteRequestModel requestModel)
     {
         try
         {
-            var entity = await _reviewRepo.GetAsync(x => x.ProductId == requestModel.ProductId && x.UserId == requestModel.UserId, true);
-            if (entity == null)
-                return ProcessResult.NotFoundResult("Could not find a review of specified product by specified user.").ToGeneric<ReviewModel>();
+            bool successful = await _feedbackActionsService.DeleteReviewAsync(requestModel.ProductId, requestModel.UserId);
 
-            if (requestModel.DeleteRating)
+            if (successful)
             {
-                var review = entity.Rating;
-                entity.Rating = null;
-                if (review != null)
-                    await _reviewCrudService.DeleteRatingAsync(review);
+                return ProcessResult.OKResult("Successful deletion.");
             }
 
-            if (requestModel.DeleteReview)
-            {
-                var review = entity.ReviewText;
-                entity.ReviewText = null;
-                if (review != null)
-                    await _reviewCrudService.DeleteTextAsync(review);
-            }
-
-            if (entity.Rating == null && entity.ReviewText == null)
-            {
-                await _reviewRepo.DeleteAsync(entity);
-                return ProcessResult.OKResult("Rating and review text are gone so the entity has been deleted.");
-            }
-
-            return ProcessResult.OKResult("Successful partial deletion.");
+            return ProcessResult.InternalServerErrorResult("An error occurred while trying to delete.");
         }
-        catch (Exception ex) { return ProduceCatchError(ex).ToGeneric<ReviewModel>(); }
+        catch (Exception ex) { return ProduceCatchError(ex).ToGeneric<UserFeedbackModel>(); }
     }
 
-    #endregion
+    public async Task<ProcessResult> DeleteRatingAsync(FeedbackDeleteRequestModel requestModel)
+    {
+        try
+        {
+            bool successful = await _feedbackActionsService.DeleteRatingAsync(requestModel.ProductId, requestModel.UserId);
+
+            if (successful)
+            {
+                return ProcessResult.OKResult("Successful deletion.");
+            }
+
+            return ProcessResult.InternalServerErrorResult("An error occurred while trying to delete.");
+        }
+        catch (Exception ex) { return ProduceCatchError(ex).ToGeneric<UserFeedbackModel>(); }
+    }
+
+    public async Task<ProcessResult<ProductFeedbackInfoResult>> GetProductFeedback(string productId)
+    {
+        try
+        {
+            var result = await _feedbackActionsService.GetFeedbackInfoAsync(productId);
+
+            if (result != null)
+            {
+                return ProcessResult.OKResult("", result);
+            }
+
+            return ProcessResult.InternalServerErrorResult("An error occurred while trying to delete.")
+                .ToGeneric<ProductFeedbackInfoResult>();
+        }
+        catch (Exception ex) { return ProduceCatchError(ex).ToGeneric<ProductFeedbackInfoResult>(); }
+    }
 }

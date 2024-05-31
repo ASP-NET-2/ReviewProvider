@@ -6,10 +6,8 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Models.RequestModels;
 
-public class ReviewDeleteRequestModel
+public class FeedbackDeleteRequestModel
 {
     public string ProductId { get; set; } = null!;
     public string UserId { get; set; } = null!;
-    public bool DeleteRating { get; set; }
-    public bool DeleteReview { get; set; }
 }

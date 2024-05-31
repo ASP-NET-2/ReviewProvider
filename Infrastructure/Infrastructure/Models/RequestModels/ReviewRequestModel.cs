@@ -8,5 +8,6 @@ public class ReviewRequestModel
 {
     public ClaimsPrincipal UserClaims { get; set; } = null!;
     public string ProductId { get; set; } = null!;
-    public ReviewModel Review { get; set; } = null!;
+    public string ReviewTitle { get; set; } = null!;
+    public string ReviewText { get; set; } = null!;
 }

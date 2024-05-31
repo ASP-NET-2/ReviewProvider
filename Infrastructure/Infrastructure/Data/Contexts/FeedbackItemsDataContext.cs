@@ -10,7 +10,9 @@ namespace Infrastructure.Data.Contexts;
 
 public class FeedbackItemsDataContext(DbContextOptions<FeedbackItemsDataContext> options) : DbContext(options)
 {
-    public DbSet<ProductReviewRatingEntity> ProductFeedbacks { get; set; }
-    public DbSet<ReviewEntity> Reviews { get; set; }
-    public DbSet<ReviewTextEntity> ReviewTexts { get; set; }
+    public DbSet<ProductFeedbackEntity> ProductFeedbacks { get; set; }
+    public DbSet<UserFeedbackEntity> Reviews { get; set; }
+    public DbSet<ReviewEntity> ReviewTexts { get; set; }
+    public DbSet<RatingEntity> Ratings { get; set; }
+
 }

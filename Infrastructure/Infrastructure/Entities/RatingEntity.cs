@@ -1,9 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace Infrastructure.Entities;
 
 public class RatingEntity
 {
-    [Key] public string ReviewEntityId { get; set; } = null!;
-    public decimal Rating { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
+    [Precision(18, 4)] public decimal Rating { get; set; }
 }

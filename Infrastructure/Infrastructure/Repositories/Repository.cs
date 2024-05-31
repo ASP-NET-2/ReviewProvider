@@ -9,19 +9,22 @@ public abstract class Repository<TEntity, TDbContext>(TDbContext dataContext) wh
 {
     private readonly TDbContext _dataContext = dataContext;
     
-    protected TDbContext Context => _dataContext;
+    public TDbContext Context => _dataContext;
+
+    public async Task<int> SaveChangesAsync() => await Context.SaveChangesAsync();
 
     public virtual IQueryable<TEntity> GetSet(bool includeRelations)
     {
         return Context.Set<TEntity>();
     }
 
-    public virtual async Task<TEntity> CreateAsync(TEntity entity)
+    public virtual async Task<TEntity> CreateAsync(TEntity entity, bool saveChanges = true)
     {
         try
         {
             var result = await Context.Set<TEntity>().AddAsync(entity);
-            await Context.SaveChangesAsync();
+            if (saveChanges)
+                await Context.SaveChangesAsync();
             return result.Entity;
         }
         catch (Exception ex) { Debug.WriteLine(ex.Message); }
@@ -58,19 +61,21 @@ public abstract class Repository<TEntity, TDbContext>(TDbContext dataContext) wh
         return await Context.Set<TEntity>().AnyAsync(expression);
     }
 
-    public virtual async Task<TEntity> UpdateAsync(TEntity entity)
+    public virtual async Task<TEntity> UpdateAsync(TEntity entity, bool saveChanges = true)
     {
         var result = Context.Set<TEntity>().Update(entity);
-        await Context.SaveChangesAsync();
+        if (saveChanges)
+            await Context.SaveChangesAsync();
         return result.Entity;
     }
 
-    public virtual async Task<bool> DeleteAsync(TEntity entity)
+    public virtual async Task<bool> DeleteAsync(TEntity entity, bool saveChanges = true)
     {
         try
         {
             Context.Set<TEntity>().Remove(entity);
-            await Context.SaveChangesAsync();
+            if (saveChanges)
+                await Context.SaveChangesAsync();
             return true;
         }
         catch (Exception ex) { Debug.WriteLine(ex.Message); }

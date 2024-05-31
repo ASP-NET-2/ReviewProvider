@@ -3,12 +3,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Infrastructure.Entities;
 
-public class ProductReviewRatingEntity
+public class ProductFeedbackEntity
 {
     [Key] 
     public string ProductId { get; set; } = null!;
 
-    public ICollection<ReviewEntity> UserReviews { get; set; } = new HashSet<ReviewEntity>();
+    public ICollection<UserFeedbackEntity> UserFeedbacks { get; set; } = new HashSet<UserFeedbackEntity>();
 
     [Column(TypeName = "decimal(5,2)")]
     public decimal AverageRating { get; set; }
