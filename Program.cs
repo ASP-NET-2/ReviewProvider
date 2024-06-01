@@ -10,7 +10,7 @@ using Microsoft.Extensions.Hosting;
 
 var host = new HostBuilder()
     .ConfigureFunctionsWebApplication()
-    .ConfigureServices((context, services) =>
+    .ConfigureServices((context, services) => //
     {
         services.AddHttpClient();
         services.AddApplicationInsightsTelemetryWorkerService();

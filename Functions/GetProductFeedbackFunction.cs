@@ -21,6 +21,7 @@ public class GetProductFeedbackFunction(ILogger<GetProductFeedbackFunction> logg
     {
         try
         {
+            _logger.LogInformation("I try to start");
             var result = await _reviewService.GetProductFeedback(productId);
 
             return ObjectResultFactory.CreateFromProcessResult(result);
