@@ -23,6 +23,10 @@ public class GetProductFeedbackFunction(ILogger<GetProductFeedbackFunction> logg
         {
             _logger.LogInformation("I try to start");
             var result = await _reviewService.GetProductFeedback(productId);
+            if (!result.IsSuccessful)
+            {
+                _logger.LogError("No success. Reason: {msg}", result.Message);
+            }
 
             return ObjectResultFactory.CreateFromProcessResult(result);
         }
