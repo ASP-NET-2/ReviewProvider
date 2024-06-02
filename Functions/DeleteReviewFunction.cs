@@ -14,7 +14,7 @@ public class DeleteReviewFunction(ILogger<DeleteReviewFunction> logger, ReviewSe
     private readonly ReviewService _reviewService = reviewService;
 
     [Function("DeleteReview")]
-    public async Task<IActionResult> DeleteReview([HttpTrigger(AuthorizationLevel.Function, "delete")] HttpRequest req)
+    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "delete")] HttpRequest req)
     {
         try
         {

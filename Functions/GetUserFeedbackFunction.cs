@@ -8,13 +8,13 @@ using ResetPassword.Factories;
 
 namespace ReviewProvider.Functions;
 
-public class GetReviewFunction(ILogger<GetReviewFunction> logger, ReviewService reviewService)
+public class GetUserFeedbackFunction(ILogger<GetUserFeedbackFunction> logger, ReviewService reviewService)
 {
-    private readonly ILogger<GetReviewFunction> _logger = logger;
+    private readonly ILogger<GetUserFeedbackFunction> _logger = logger;
     private readonly ReviewService _reviewService = reviewService;
 
-    [Function("GetReview")]
-    public async Task<IActionResult> GetReview([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    [Function("GetUserFeedbackFunction")]
+    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
     {
         try
         {

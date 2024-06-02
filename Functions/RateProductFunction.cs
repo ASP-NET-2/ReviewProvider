@@ -18,7 +18,7 @@ public class RateProductFunction(ILogger<RateProductFunction> logger, ReviewServ
     private readonly ReviewService _reviewService = reviewService;
 
     [Function("RateProduct")]
-    public async Task<IActionResult> RateProduct([HttpTrigger(AuthorizationLevel.Function, "post", "put")] HttpRequest req)
+    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post", "put")] HttpRequest req)
     {
         try
         {

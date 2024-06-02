@@ -18,8 +18,8 @@ namespace Infrastructure.Services;
 /// <summary>
 /// Service that manages reviews and ratings.
 /// </summary>
-public class ReviewService(FeedbackActionsService feedbackActionsService,
-    UserManager<UserEntity> userManager, SignInManager<UserEntity> signInManager, HttpClient httpClient, IConfiguration config)
+public class ReviewService(FeedbackActionsService feedbackActionsService, UserManager<UserEntity> userManager, 
+    SignInManager<UserEntity> signInManager, HttpClient httpClient, IConfiguration config)
 {
     private readonly FeedbackActionsService _feedbackActionsService = feedbackActionsService;
     private readonly UserManager<UserEntity> _userManager = userManager;
@@ -35,20 +35,6 @@ public class ReviewService(FeedbackActionsService feedbackActionsService,
         return new ProcessResult(StatusCodes.Status500InternalServerError, "ERROR: " + ex.Message);
     }
 
-    /// <summary>
-    /// Returns a user entity if valid and logged in.
-    /// </summary>
-    private async Task<UserEntity?> EnsureUserLoggedIn(ClaimsPrincipal userClaims)
-    {
-        var entity = await _userManager.GetUserAsync(userClaims);
-        if (entity == null || !_signInManager.IsSignedIn(userClaims))
-        {
-            return null;
-        }
-
-        return entity;
-    }
-
     #endregion
 
     public async Task<ProcessResult> ReviewProductAsync(ReviewRequestModel requestModel)
@@ -56,14 +42,13 @@ public class ReviewService(FeedbackActionsService feedbackActionsService,
         try
         {
             if (requestModel.ReviewText == null || requestModel.ReviewTitle == null)
-                return ProcessResult.ForbiddenResult("Empty reviews are not allowed.");
+                return ProcessResult.BadRequestResult("Empty reviews are not allowed.");
 
-            // Get user, we need both its ID and to ensure that they're logged in.
-            var user = await EnsureUserLoggedIn(requestModel.UserClaims);
-
+            // Ensure that user exists.
+            var user = await _userManager.FindByIdAsync(requestModel.UserId);
             if (user == null)
             {
-                return ProcessResult.ForbiddenResult("User must prove that they're logged in to leave a review.");
+                return ProcessResult.NotFoundResult("The reviewing user could not be found. The server could not be contacted, or the user does not/no longer exists.");
             }
 
             string productId = requestModel.ProductId;
@@ -91,33 +76,31 @@ public class ReviewService(FeedbackActionsService feedbackActionsService,
     {
         try
         {
-            // Get user, we need both its ID and to ensure that they're logged in.
-            var user = await EnsureUserLoggedIn(requestModel.UserClaims);
-
-            if (user == null)
+            if (requestModel.Rating == null)
             {
-                return ProcessResult.ForbiddenResult("User must prove that they're logged in to leave a review.");
-            }
-
-            string productId = requestModel.ProductId;
-
-            // Ensure that product exists.
-            var product = await _httpClient.GetFromJsonAsync<ProductModel>($"{_config["SingleProductUrl"]}/{productId}");
-            if (product == null)
-            {
-                return ProcessResult.NotFoundResult("The product being reviewed could not be found. The server could not be contacted, or the product does not/no longer exists.")
+                return ProcessResult.BadRequestResult("No rating was included in the request.")
                     .ToGeneric<UserFeedbackEntity>();
             }
 
-            var ratingModel = new RatingModel
+            // Ensure that user exists.
+            var user = await _userManager.FindByIdAsync(requestModel.UserId);
+            if (user == null)
             {
-                Rating = requestModel.Rating.Rating,
-            };
-            await _feedbackActionsService.RateProductAsync(productId, user.Id, ratingModel);
+                return ProcessResult.NotFoundResult("The reviewing user could not be found. The server could not be contacted, or the user does not/no longer exists.");
+            }
+
+            // Ensure that product exists.
+            var product = await _httpClient.GetFromJsonAsync<ProductModel>($"{_config["SingleProductUrl"]}/{requestModel.ProductId}");
+            if (product == null)
+            {
+                return ProcessResult.NotFoundResult("The product being reviewed could not be found. The server could not be contacted, or the product does not/no longer exists.");
+            }
+
+            await _feedbackActionsService.RateProductAsync(requestModel.ProductId, user.Id, requestModel.Rating);
 
             return ProcessResult.CreatedResult("Review successfully stored.");
         }
-        catch (Exception ex) { return ProduceCatchError(ex).ToGeneric<UserFeedbackEntity>(); }
+        catch (Exception ex) { return ProduceCatchError(ex); }
     }
 
     public async Task<ProcessResult<UserFeedbacksResult>> GetAllUserFeedbacksOfProductAsync(UserFeedbacksGetRequestModel qModel)

@@ -17,7 +17,7 @@ public class GetProductFeedbackFunction(ILogger<GetProductFeedbackFunction> logg
     private readonly ReviewService _reviewService = reviewService;
 
     [Function("GetProductFeedback")]
-    public async Task<IActionResult> GetProductFeedback([HttpTrigger(AuthorizationLevel.Function, "get", Route = "GetProductFeedback/{productId}")] HttpRequest req, string productId)
+    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "GetProductFeedback/{productId}")] HttpRequest req, string productId)
     {
         try
         {

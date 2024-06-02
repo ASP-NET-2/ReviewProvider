@@ -6,7 +6,7 @@ namespace Infrastructure.Models.RequestModels;
 
 public class RatingRequestModel
 {
-    public ClaimsPrincipal UserClaims { get; set; } = null!;
+    public string UserId { get; set; } = null!;
     public string ProductId { get; set; } = null!;
     public RatingModel Rating { get; set; } = null!;
 }
