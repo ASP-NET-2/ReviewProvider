@@ -14,7 +14,7 @@ public class GetAllReviewsFunction(ILogger<GetAllReviewsFunction> logger, Review
     private readonly ReviewService _reviewService = reviewService;
 
     [Function("GetAllReviews")]
-    public async Task<IActionResult> GetAllReviews([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    public async Task<IActionResult> GetAllReviews([HttpTrigger(AuthorizationLevel.Function, "post", Route = "GetAllReviews")] HttpRequest req)
     {
         try
         {
