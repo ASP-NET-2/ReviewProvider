@@ -13,7 +13,7 @@ public class GetUserFeedbackFunction(ILogger<GetUserFeedbackFunction> logger, Re
     private readonly ILogger<GetUserFeedbackFunction> _logger = logger;
     private readonly ReviewService _reviewService = reviewService;
 
-    [Function("GetUserFeedbackFunction")]
+    [Function("GetUserFeedback")]
     public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
     {
         try

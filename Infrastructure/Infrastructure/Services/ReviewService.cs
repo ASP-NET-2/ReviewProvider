@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Net.Http.Json;
 using System.Security.Claims;
@@ -18,14 +20,15 @@ namespace Infrastructure.Services;
 /// <summary>
 /// Service that manages reviews and ratings.
 /// </summary>
-public class ReviewService(FeedbackActionsService feedbackActionsService, UserManager<UserEntity> userManager, 
-    SignInManager<UserEntity> signInManager, HttpClient httpClient, IConfiguration config)
+public class ReviewService(FeedbackActionsService feedbackActionsService, UserManager<UserEntity> userManager,
+    SignInManager<UserEntity> signInManager, HttpClient httpClient, IConfiguration config, ILogger<ReviewService> logger)
 {
     private readonly FeedbackActionsService _feedbackActionsService = feedbackActionsService;
     private readonly UserManager<UserEntity> _userManager = userManager;
     private readonly SignInManager<UserEntity> _signInManager = signInManager;
     private readonly HttpClient _httpClient = httpClient;
     private readonly IConfiguration _config = config;
+    private readonly ILogger<ReviewService> _logger = logger;
 
     #region Internal
 
@@ -90,7 +93,14 @@ public class ReviewService(FeedbackActionsService feedbackActionsService, UserMa
             }
 
             // Ensure that product exists.
-            var product = await _httpClient.GetFromJsonAsync<ProductModel>($"{_config["SingleProductUrl"]}/{requestModel.ProductId}");
+
+            //var product = await _httpClient.GetFromJsonAsync<ProductModel>($"{_config["SingleProductUrl"]}/{requestModel.ProductId}");
+            var response = await _httpClient.GetAsync($"{_config["SingleProductUrl"]}/{requestModel.ProductId}");
+            _logger.LogInformation("URL: {msg}", $"{_config["SingleProductUrl"]}/{requestModel.ProductId}");
+            string str = await response.Content.ReadAsStringAsync();
+            _logger.LogInformation("{msg}", str);
+
+            var product = JsonConvert.DeserializeObject<ProductModel>(await response.Content.ReadAsStringAsync());
             if (product == null)
             {
                 return ProcessResult.NotFoundResult("The product being reviewed could not be found. The server could not be contacted, or the product does not/no longer exists.");
@@ -134,7 +144,7 @@ public class ReviewService(FeedbackActionsService feedbackActionsService, UserMa
                 }
             }
 
-            var list = await _feedbackActionsService.GetUserFeedbacksAsync(qModel.ProductId, qModel.ByUserId, 
+            var list = await _feedbackActionsService.GetUserFeedbacksAsync(qModel.ProductId, qModel.ByUserId,
                 startIndex, takeCount, qModel.IncludeReviews, qModel.IncludeRatings);
 
             result.TotalItemCount = totalItemCount;

@@ -14,7 +14,7 @@ public class GetAllUserFeedbacksFunction(ILogger<GetAllUserFeedbacksFunction> lo
     private readonly ILogger<GetAllUserFeedbacksFunction> _logger = logger;
     private readonly ReviewService _reviewService = reviewService;
 
-    [Function("GetAllUserFeedbacksFunction")]
+    [Function("GetAllUserFeedbacks")]
     public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
     {
         var model = new UserFeedbacksGetRequestModel();

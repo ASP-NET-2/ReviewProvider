@@ -16,7 +16,8 @@ public class UserFeedbackRepository(FeedbackItemsDataContext dataContext) : Repo
         if (includeRelations)
         {
             return base.GetSet(includeRelations)
-                .Include(x => x.Review);
+                .Include(x => x.Review)
+                .Include(x => x.Rating);
         }
 
         return base.GetSet(includeRelations);

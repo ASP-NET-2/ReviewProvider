@@ -30,6 +30,8 @@ public class RateProductFunction(ILogger<RateProductFunction> logger, ReviewServ
 
             var result = await _reviewService.RateProductAsync(requestModel);
 
+            _logger.LogInformation("message: {msg}", result.Message);
+
             return ObjectResultFactory.CreateFromProcessResult(result);
         }
         catch (Exception ex) { return new ObjectResult(ex.Message) { StatusCode = 500 }; }

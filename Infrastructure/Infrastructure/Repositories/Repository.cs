@@ -25,6 +25,7 @@ public abstract class Repository<TEntity, TDbContext>(TDbContext dataContext) wh
             var result = await Context.Set<TEntity>().AddAsync(entity);
             if (saveChanges)
                 await Context.SaveChangesAsync();
+            Debug.WriteLine(Context.ChangeTracker.Entries().Count());
             return result.Entity;
         }
         catch (Exception ex) { Debug.WriteLine(ex.Message); }
@@ -66,6 +67,7 @@ public abstract class Repository<TEntity, TDbContext>(TDbContext dataContext) wh
         var result = Context.Set<TEntity>().Update(entity);
         if (saveChanges)
             await Context.SaveChangesAsync();
+        Debug.WriteLine(Context.ChangeTracker.Entries().Count());
         return result.Entity;
     }
 

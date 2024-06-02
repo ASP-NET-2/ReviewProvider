@@ -6,6 +6,7 @@ using Infrastructure.Models.RequestModels;
 using Infrastructure.Models.ResultModels;
 using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -15,14 +16,15 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Services;
 
-public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, ReviewRepository reviewRepo, 
-    RatingRepository ratingRepo, ProductFeedbackRepository feedbackRepo, FeedbackItemsDataContext feedbackItemsDataContext)
+public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, ReviewRepository reviewRepo,
+    RatingRepository ratingRepo, ProductFeedbackRepository feedbackRepo, FeedbackItemsDataContext feedbackItemsDataContext, ILogger<FeedbackActionsService> logger)
 {
     private readonly UserFeedbackRepository _userFeedbackRepo = userFeedbackRepo;
     private readonly ReviewRepository _reviewRepo = reviewRepo;
     private readonly RatingRepository _ratingRepo = ratingRepo;
     private readonly ProductFeedbackRepository _productFeedbackRepo = feedbackRepo;
     private readonly FeedbackItemsDataContext _feedbackItemsDataContext = feedbackItemsDataContext;
+    private readonly ILogger<FeedbackActionsService> _logger = logger;
 
     #region Internal
 
@@ -47,15 +49,17 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
             var feedbackEntity = await GetOrCreateProductFeedbackEntity(productId);
 
             var userFeedback = feedbackEntity.UserFeedbacks.FirstOrDefault(x => x.UserId == userId);
-            
+
             if (userFeedback == null) // Create an entity if it doesn't already exist.
             {
-                var newEntity = new UserFeedbackEntity { ProductId = productId, UserId = productId };
-                userFeedback = await _userFeedbackRepo.CreateAsync(newEntity, false);
-                
+                var newEntity = new UserFeedbackEntity { ProductId = productId, UserId = userId };
+                userFeedback = await _userFeedbackRepo.CreateAsync(newEntity, saveChangesIfCreate);
+
                 feedbackEntity.UserFeedbacks.Add(userFeedback);
                 feedbackEntity = await _productFeedbackRepo.UpdateAsync(feedbackEntity, saveChangesIfCreate);
             }
+
+            return userFeedback;
         }
         catch (Exception ex) { Debug.WriteLine(ex.Message); }
 
@@ -143,7 +147,7 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
     {
         try
         {
-            var userFeedbackEntity = await GetOrCreateUserFeedbackEntity(productId, userId, false);
+            var userFeedbackEntity = await GetOrCreateUserFeedbackEntity(productId, userId, true);
 
             if (userFeedbackEntity.Rating == null)
             {
@@ -160,10 +164,10 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
             await _userFeedbackRepo.UpdateAsync(userFeedbackEntity, false);
 
             var productFeedback = await GetOrCreateProductFeedbackEntity(productId);
-            await _productFeedbackRepo.UpdateAsync(UpdateAverageProductRating(productFeedback));
+            await _productFeedbackRepo.UpdateAsync(UpdateAverageProductRating(productFeedback), false);
 
-            await _feedbackItemsDataContext.SaveChangesAsync();
-
+            int amountSaved = await _feedbackItemsDataContext.SaveChangesAsync();
+            _logger.LogInformation("Items saved: {amntSaved}", amountSaved);
             return true;
         }
         catch (Exception ex) { Debug.WriteLine(ex.Message); }
@@ -200,7 +204,7 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
             if (includeRatings) query = query.Include(x => x.Rating);
 
             if (startIndex != null) query = query.Skip(startIndex.Value);
-            if (takeCount != null)  query = query.Take(takeCount.Value);
+            if (takeCount != null) query = query.Take(takeCount.Value);
 
             var list = await query.ToListAsync();
 
@@ -212,8 +216,8 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
                 result.Add(model);
             }
 
-            result = (List<UserFeedbackModel>)result.OrderByDescending(x => x.Review != null 
-            ? x.Review.OriginallyPostedDate 
+            result = (List<UserFeedbackModel>)result.OrderByDescending(x => x.Review != null
+            ? x.Review.OriginallyPostedDate
             : DateTime.MinValue);
 
             return result;
@@ -228,7 +232,7 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
         try
         {
             var productEntity = await GetOrCreateProductFeedbackEntity(productId);
-            
+
             var result = ProductFeedbackInfoResultFactory.Create(productEntity);
 
             return result;
@@ -242,7 +246,7 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
     {
         try
         {
-            if (productId == null &&  userId == null) 
+            if (productId == null && userId == null)
                 return 0;
 
             var query = _userFeedbackRepo.GetSet(false);
