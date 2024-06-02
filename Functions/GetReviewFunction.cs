@@ -18,13 +18,16 @@ public class GetReviewFunction(ILogger<GetReviewFunction> logger, ReviewService 
     {
         try
         {
-            var requestModel = await req.ReadFromJsonAsync<ReviewGetRequestModel>();
-            if (requestModel == null)
-            {
-                return new BadRequestObjectResult("Request model read as null.");
-            }
+            //var requestModel = await req.ReadFromJsonAsync<ReviewGetRequestModel>();
+            //if (requestModel == null)
+            //{
+            //    return new BadRequestObjectResult("Request model read as null.");
+            //}
+            var model = new ReviewGetRequestModel();
+            model.UserId = req.Query["UserId"];
+            model.ProductId = req.Query["ProductId"];
 
-            var result = await _reviewService.GetUserFeedbackAsync(requestModel);
+            var result = await _reviewService.GetUserFeedbackAsync(model);
 
             return ObjectResultFactory.CreateFromProcessResult(result);
         }
