@@ -16,7 +16,7 @@ var host = new HostBuilder()
         services.AddApplicationInsightsTelemetryWorkerService();
         services.ConfigureFunctionsApplicationInsights();
         services.AddDbContext<IdentityDataContext>(x => x.UseSqlServer(context.Configuration.GetConnectionString("IdentityServer")));
-        services.AddDbContext<FeedbackItemsDataContext>(x => x.UseSqlServer(context.Configuration.GetConnectionString("FeedbackItems")), ServiceLifetime.Transient);
+        services.AddDbContext<FeedbackItemsDataContext>(x => x.UseSqlServer(context.Configuration.GetConnectionString("FeedbackItems"))/*, ServiceLifetime.Transient*/);
         services.AddDefaultIdentity<UserEntity>(x =>
         {
         }).AddEntityFrameworkStores<IdentityDataContext>();
