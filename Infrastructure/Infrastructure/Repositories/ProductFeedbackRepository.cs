@@ -11,7 +11,8 @@ public class ProductFeedbackRepository(FeedbackItemsDataContext dataContext) : R
         if (includeRelations)
         {
             return base.GetSet(context, includeRelations)
-                .Include(x => x.UserFeedbacks);
+                .Include(x => x.UserFeedbacks).ThenInclude(x => x.Review)
+                .Include(x => x.UserFeedbacks).ThenInclude(x => x.Rating);
         }
 
         return base.GetSet(context, includeRelations);
