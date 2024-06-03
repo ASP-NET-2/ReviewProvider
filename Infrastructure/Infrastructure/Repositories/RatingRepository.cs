@@ -8,6 +8,6 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Repositories;
 
-public class RatingRepository(FeedbackItemsDataContext dataContext) : Repository<RatingEntity, FeedbackItemsDataContext>(dataContext)
+public class RatingRepository(FeedbackItemsDataContext dataContext) : Repository<RatingEntity, FeedbackItemsDataContext>(/*dataContext*/)
 {
 }

@@ -4,17 +4,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories;
 
-public class ProductFeedbackRepository(FeedbackItemsDataContext dataContext) : Repository<ProductFeedbackEntity, FeedbackItemsDataContext>(dataContext)
+public class ProductFeedbackRepository(FeedbackItemsDataContext dataContext) : Repository<ProductFeedbackEntity, FeedbackItemsDataContext>(/*dataContext*/)
 {
-    public override IQueryable<ProductFeedbackEntity> GetSet(bool includeRelations)
+    public override IQueryable<ProductFeedbackEntity> GetSet(FeedbackItemsDataContext context, bool includeRelations)
     {
         if (includeRelations)
         {
-            return base.GetSet(includeRelations)
+            return base.GetSet(context, includeRelations)
                 .Include(x => x.UserFeedbacks);
         }
 
-        return base.GetSet(includeRelations);
+        return base.GetSet(context, includeRelations);
     }
 }
 

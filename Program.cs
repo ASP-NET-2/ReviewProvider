@@ -15,16 +15,18 @@ var host = new HostBuilder()
         services.AddHttpClient();
         services.AddApplicationInsightsTelemetryWorkerService();
         services.ConfigureFunctionsApplicationInsights();
-        services.AddDbContext<IdentityDataContext>(x => x.UseSqlServer(context.Configuration.GetConnectionString("IdentityServer")));
-        services.AddDbContext<FeedbackItemsDataContext>(x => x.UseSqlServer(context.Configuration.GetConnectionString("FeedbackItems"))/*, ServiceLifetime.Transient*/);
-        services.AddDefaultIdentity<UserEntity>(x =>
-        {
-        }).AddEntityFrameworkStores<IdentityDataContext>();
+        services.AddDbContextFactory<IdentityDataContext>(x => x.UseSqlServer(context.Configuration.GetConnectionString("IdentityServer")));
+        services.AddDbContextFactory<FeedbackItemsDataContext>(x => x.UseSqlServer(context.Configuration.GetConnectionString("FeedbackItems"))/*, ServiceLifetime.Transient*/);
+        
+        //services.AddDefaultIdentity<UserEntity>(x =>
+        //{
+        //}).AddEntityFrameworkStores<IdentityDataContext>();
 
         services.AddSingleton<ReviewRepository>();
         services.AddSingleton<RatingRepository>();
         services.AddSingleton<UserFeedbackRepository>();
         services.AddSingleton<ProductFeedbackRepository>();
+        services.AddSingleton<UserRepository>();
         
         services.AddSingleton<FeedbackActionsService>();
         services.AddSingleton<ReviewService>();

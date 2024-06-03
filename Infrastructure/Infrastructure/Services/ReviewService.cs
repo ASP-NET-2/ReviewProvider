@@ -20,15 +20,14 @@ namespace Infrastructure.Services;
 /// <summary>
 /// Service that manages reviews and ratings.
 /// </summary>
-public class ReviewService(FeedbackActionsService feedbackActionsService, UserManager<UserEntity> userManager,
-    SignInManager<UserEntity> signInManager, HttpClient httpClient, IConfiguration config, ILogger<ReviewService> logger)
+public class ReviewService(FeedbackActionsService feedbackActionsService,
+    HttpClient httpClient, IConfiguration config, ILogger<ReviewService> logger)
 {
     private readonly FeedbackActionsService _feedbackActionsService = feedbackActionsService;
-    private readonly UserManager<UserEntity> _userManager = userManager;
-    private readonly SignInManager<UserEntity> _signInManager = signInManager;
     private readonly HttpClient _httpClient = httpClient;
     private readonly IConfiguration _config = config;
     private readonly ILogger<ReviewService> _logger = logger;
+    
 
     #region Internal
 
@@ -48,7 +47,7 @@ public class ReviewService(FeedbackActionsService feedbackActionsService, UserMa
                 return ProcessResult.BadRequestResult("Empty reviews are not allowed.");
 
             // Ensure that user exists.
-            var user = await _userManager.FindByIdAsync(requestModel.UserId);
+            var user = await _feedbackActionsService.GetUserAsync(requestModel.UserId);
             if (user == null)
             {
                 return ProcessResult.NotFoundResult("The reviewing user could not be found. The server could not be contacted, or the user does not/no longer exists.");
@@ -86,10 +85,10 @@ public class ReviewService(FeedbackActionsService feedbackActionsService, UserMa
             }
 
             // Ensure that user exists.
-            var user = await _userManager.FindByIdAsync(requestModel.UserId);
+            var user = await _feedbackActionsService.GetUserAsync(requestModel.UserId);
             if (user == null)
             {
-                return ProcessResult.NotFoundResult("The reviewing user could not be found. The server could not be contacted, or the user does not/no longer exists.");
+                return ProcessResult.NotFoundResult("The rating user could not be found. The server could not be contacted, or the user does not/no longer exists.");
             }
 
             // Ensure that product exists.
@@ -210,7 +209,7 @@ public class ReviewService(FeedbackActionsService feedbackActionsService, UserMa
                 return ProcessResult.OKResult("", result);
             }
 
-            return ProcessResult.InternalServerErrorResult("An error occurred while trying to delete.")
+            return ProcessResult.InternalServerErrorResult("An error occurred while trying to get the feedback info result.")
                 .ToGeneric<ProductFeedbackInfoResult>();
         }
         catch (Exception ex) { return ProduceCatchError(ex).ToGeneric<ProductFeedbackInfoResult>(); }

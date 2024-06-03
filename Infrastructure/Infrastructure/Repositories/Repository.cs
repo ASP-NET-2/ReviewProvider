@@ -5,27 +5,27 @@ using System.Linq.Expressions;
 
 namespace Infrastructure.Repositories;
 
-public abstract class Repository<TEntity, TDbContext>(TDbContext dataContext) where TEntity : class where TDbContext : DbContext
+public abstract class Repository<TEntity, TDbContext>(/*TDbContext dataContext*/) where TEntity : class where TDbContext : DbContext
 {
-    private readonly TDbContext _dataContext = dataContext;
+    //private readonly TDbContext _dataContext = dataContext;
     
-    public TDbContext Context => _dataContext;
+    //public TDbContext Context => _dataContext;
 
-    public async Task<int> SaveChangesAsync() => await Context.SaveChangesAsync();
+    //public async Task<int> SaveChangesAsync() => await Context.SaveChangesAsync();
 
-    public virtual IQueryable<TEntity> GetSet(bool includeRelations)
+    public virtual IQueryable<TEntity> GetSet(TDbContext context, bool includeRelations)
     {
-        return Context.Set<TEntity>();
+        return context.Set<TEntity>();
     }
 
-    public virtual async Task<TEntity> CreateAsync(TEntity entity, bool saveChanges = true)
+    public virtual async Task<TEntity> CreateAsync(TDbContext context, TEntity entity, bool saveChanges = true)
     {
         try
         {
-            var result = await Context.Set<TEntity>().AddAsync(entity);
+            var result = await context.Set<TEntity>().AddAsync(entity);
             if (saveChanges)
-                await Context.SaveChangesAsync();
-            Debug.WriteLine(Context.ChangeTracker.Entries().Count());
+                await context.SaveChangesAsync();
+            Debug.WriteLine(context.ChangeTracker.Entries().Count());
             return result.Entity;
         }
         catch (Exception ex) { Debug.WriteLine(ex.Message); }
@@ -33,11 +33,11 @@ public abstract class Repository<TEntity, TDbContext>(TDbContext dataContext) wh
         return null!;
     }
 
-    public virtual async Task<TEntity?> GetAsync(Expression<Func<TEntity, bool>> expression, bool includeRelations = false)
+    public virtual async Task<TEntity?> GetAsync(TDbContext context, Expression<Func<TEntity, bool>> expression, bool includeRelations = false)
     {
         try
         {
-            var entity = await GetSet(includeRelations).FirstOrDefaultAsync(expression);
+            var entity = await GetSet(context, includeRelations).FirstOrDefaultAsync(expression);
             return entity ?? null;
         }
         catch(Exception e) { Debug.WriteLine(e.Message); }
@@ -45,39 +45,39 @@ public abstract class Repository<TEntity, TDbContext>(TDbContext dataContext) wh
         return null;
     }
 
-    public virtual async Task<IEnumerable<TEntity>> GetAllAsync(bool includeRelations = false)
+    public virtual async Task<IEnumerable<TEntity>> GetAllAsync(TDbContext context, bool includeRelations = false)
     {
-        var entities = await GetSet(includeRelations).ToListAsync();
+        var entities = await GetSet(context, includeRelations).ToListAsync();
         return entities ?? null!;
     }
 
-    public virtual async Task<IEnumerable<TEntity>> GetAllAsync(Expression<Func<TEntity, bool>> expression, bool includeRelations = false)
+    public virtual async Task<IEnumerable<TEntity>> GetAllAsync(TDbContext context, Expression<Func<TEntity, bool>> expression, bool includeRelations = false)
     {
-        var entities = await GetSet(includeRelations).Where(expression).ToListAsync();
+        var entities = await GetSet(context, includeRelations).Where(expression).ToListAsync();
         return entities ?? null!;
     }
 
-    public virtual async Task<bool> ExistsAsync(Expression<System.Func<TEntity, bool>> expression)
+    public virtual async Task<bool> ExistsAsync(TDbContext context, Expression<System.Func<TEntity, bool>> expression)
     {
-        return await Context.Set<TEntity>().AnyAsync(expression);
+        return await context.Set<TEntity>().AnyAsync(expression);
     }
 
-    public virtual async Task<TEntity> UpdateAsync(TEntity entity, bool saveChanges = true)
+    public virtual async Task<TEntity> UpdateAsync(TDbContext context, TEntity entity, bool saveChanges = true)
     {
-        var result = Context.Set<TEntity>().Update(entity);
+        var result = context.Set<TEntity>().Update(entity);
         if (saveChanges)
-            await Context.SaveChangesAsync();
-        Debug.WriteLine(Context.ChangeTracker.Entries().Count());
+            await context.SaveChangesAsync();
+        Debug.WriteLine(context.ChangeTracker.Entries().Count());
         return result.Entity;
     }
 
-    public virtual async Task<bool> DeleteAsync(TEntity entity, bool saveChanges = true)
+    public virtual async Task<bool> DeleteAsync(TDbContext context, TEntity entity, bool saveChanges = true)
     {
         try
         {
-            Context.Set<TEntity>().Remove(entity);
+            context.Set<TEntity>().Remove(entity);
             if (saveChanges)
-                await Context.SaveChangesAsync();
+                await context.SaveChangesAsync();
             return true;
         }
         catch (Exception ex) { Debug.WriteLine(ex.Message); }
