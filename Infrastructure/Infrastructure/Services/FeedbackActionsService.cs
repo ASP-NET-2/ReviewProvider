@@ -133,7 +133,7 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
         try
         {
             using var ctx = await _feedbackContextFactory.CreateDbContextAsync();
-            var userFeedbackEntity = await GetOrCreateUserFeedbackEntityAsync(ctx, productId, userId, false);
+            var userFeedbackEntity = await GetOrCreateUserFeedbackEntityAsync(ctx, productId, userId, true);
 
             if (userFeedbackEntity.Review == null)
             {
@@ -149,9 +149,10 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
             await _userFeedbackRepo.UpdateAsync(ctx, userFeedbackEntity, false);
 
             var productFeedback = await GetOrCreateProductFeedbackEntityAsync(ctx, productId);
-            await _productFeedbackRepo.UpdateAsync(ctx, UpdateAverageProductRating(productFeedback));
+            await _productFeedbackRepo.UpdateAsync(ctx, UpdateAverageProductRating(productFeedback), false);
 
-            await ctx.SaveChangesAsync();
+            int amountSaved = await ctx.SaveChangesAsync();
+            _logger.LogInformation("Items saved: {amntSaved}", amountSaved);
 
             return true;
         }
