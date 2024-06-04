@@ -116,7 +116,7 @@ public class ReviewService(FeedbackActionsService feedbackActionsService,
     {
         try
         {
-            if (qModel.ProductId == null && qModel.ByUserId == null)
+            if (string.IsNullOrEmpty(qModel.ProductId) && string.IsNullOrEmpty(qModel.ByUserId))
                 return new ProcessResult<UserFeedbacksResult>(StatusCodes.Status200OK, "ProductId and ByUserId are both null. Returning empty list.", new());
 
             var result = new UserFeedbacksResult();

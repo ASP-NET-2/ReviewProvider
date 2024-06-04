@@ -1,4 +1,5 @@
 ﻿using Infrastructure.Models.RequestModels;
+using Infrastructure.Models.ResultModels;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -18,11 +19,12 @@ public class DeleteReviewFunction(ILogger<DeleteReviewFunction> logger, ReviewSe
     {
         try
         {
-            var requestModel = await req.ReadFromJsonAsync<FeedbackDeleteRequestModel>();
-            if (requestModel == null)
-            {
-                return new BadRequestObjectResult("Request model read as null.");
-            }
+            var requestModel = new FeedbackDeleteRequestModel();
+            requestModel.UserId = req.Query["UserId"]!;
+            requestModel.ProductId = req.Query["ProductId"]!;
+
+            if (requestModel.ProductId == null || requestModel.UserId == null)
+                return ObjectResultFactory.CreateFromProcessResult(ProcessResult.BadRequestResult("Neither UserId or ProductId can be null."));
 
             var result = await _reviewService.DeleteReviewAsync(requestModel);
 

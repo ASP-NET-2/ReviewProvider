@@ -106,9 +106,9 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
         bool result = feedbackEntity.Review == null && feedbackEntity.Rating == null;
         if (result)
         {
-            await _userFeedbackRepo.DeleteAsync(ctx, feedbackEntity);
+            await _userFeedbackRepo.DeleteAsync(ctx, feedbackEntity, true);
             var productFeedback = await GetOrCreateProductFeedbackEntityAsync(ctx, feedbackEntity.ProductId);
-            await _productFeedbackRepo.UpdateAsync(ctx, UpdateAverageProductRating(productFeedback), false);
+            await _productFeedbackRepo.UpdateAsync(ctx, UpdateAverageProductRating(productFeedback), true);
         }
 
         return result;
@@ -199,6 +199,9 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
         try
         {
             using var ctx = await _feedbackContextFactory.CreateDbContextAsync();
+            if (string.IsNullOrEmpty(productId) || string.IsNullOrEmpty(userId))
+                return null;
+
             var entity = await _userFeedbackRepo.GetAsync(ctx, x => x.ProductId == productId && x.UserId == userId, true);
             if (entity == null)
                 return null;
@@ -216,10 +219,13 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
         try
         {
             using var ctx = await _feedbackContextFactory.CreateDbContextAsync();
-            if (productId == null && userId == null)
+            if (string.IsNullOrEmpty(productId) && string.IsNullOrEmpty(userId))
                 return [];
 
             var query = _userFeedbackRepo.GetSet(ctx, false);
+
+            if (!string.IsNullOrEmpty(productId)) query = query.Where(x => x.ProductId == productId);
+            if (!string.IsNullOrEmpty(userId)) query = query.Where(x => x.UserId == userId);
 
             if (includeReviews) query = query.Include(x => x.Review);
             if (includeRatings) query = query.Include(x => x.Rating);
@@ -237,9 +243,9 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
                 result.Add(model);
             }
 
-            result = (List<UserFeedbackModel>)result.OrderByDescending(x => x.Review != null
+            result = result.OrderByDescending(x => x.Review != null
             ? x.Review.OriginallyPostedDate
-            : DateTime.MinValue);
+            : DateTime.MinValue).ToList();
 
             return result;
         }
@@ -270,13 +276,13 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
         try
         {
             using var ctx = await _feedbackContextFactory.CreateDbContextAsync();
-            if (productId == null && userId == null)
+            if (string.IsNullOrEmpty(productId) && string.IsNullOrEmpty(userId))
                 return 0;
 
             var query = _userFeedbackRepo.GetSet(ctx, false);
 
-            if (productId != null) query = query.Where(x => x.ProductId == productId);
-            if (userId != null) query = query.Where(query => query.UserId == userId);
+            if (!string.IsNullOrEmpty(productId)) query = query.Where(x => x.ProductId == productId);
+            if (!string.IsNullOrEmpty(userId)) query = query.Where(x => x.UserId == userId);
 
             return await query.CountAsync();
         }
@@ -291,26 +297,29 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
         {
             using var ctx = await _feedbackContextFactory.CreateDbContextAsync();
 
-            if (productId == null && userId == null)
+            if (string.IsNullOrEmpty(productId) || string.IsNullOrEmpty(userId))
             {
                 return false;
             }
 
-            var feedbackRepo = await _userFeedbackRepo.GetAsync(ctx, x => x.ProductId == productId && x.UserId == userId);
-            if (feedbackRepo == null)
+            var userFeedback = await _userFeedbackRepo.GetAsync(ctx, x => x.ProductId == productId && x.UserId == userId, true);
+            if (userFeedback == null)
                 return false;
 
-            var review = feedbackRepo.Review;
+            var review = userFeedback.Review;
             if (review == null)
                 return false;
 
-            await _reviewRepo.DeleteAsync(ctx, review, false);
+            await _reviewRepo.DeleteAsync(ctx, review, true);
 
-            feedbackRepo.Review = null;
+            userFeedback.Review = null;
 
-            if (!await DeleteUserFeedbackIfEmpty(feedbackRepo))
+            if (!await DeleteUserFeedbackIfEmpty(userFeedback))
             {
-                await _userFeedbackRepo.UpdateAsync(ctx, feedbackRepo, false);
+                await _userFeedbackRepo.UpdateAsync(ctx, userFeedback, false);
+
+                var productFeedback = await GetOrCreateProductFeedbackEntityAsync(ctx, productId, false);
+                await _productFeedbackRepo.UpdateAsync(ctx, UpdateAverageProductRating(productFeedback), false);
             }
 
             await ctx.SaveChangesAsync();
@@ -326,12 +335,12 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
         {
             using var ctx = await _feedbackContextFactory.CreateDbContextAsync();
 
-            if (productId == null && userId == null)
+            if (string.IsNullOrEmpty(productId) || string.IsNullOrEmpty(userId))
             {
                 return false;
             }
 
-            var userFeedback = await _userFeedbackRepo.GetAsync(ctx, x => x.ProductId == productId && x.UserId == userId);
+            var userFeedback = await _userFeedbackRepo.GetAsync(ctx, x => x.ProductId == productId && x.UserId == userId, true);
             if (userFeedback == null)
                 return false;
 
@@ -339,13 +348,16 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
             if (rating == null)
                 return false;
 
-            await _ratingRepo.DeleteAsync(ctx, rating, false);
+            await _ratingRepo.DeleteAsync(ctx, rating, true);
 
             userFeedback.Rating = null;
 
             if (!await DeleteUserFeedbackIfEmpty(userFeedback))
             {
                 await _userFeedbackRepo.UpdateAsync(ctx, userFeedback, false);
+
+                var productFeedback = await GetOrCreateProductFeedbackEntityAsync(ctx, productId, false);
+                await _productFeedbackRepo.UpdateAsync(ctx, UpdateAverageProductRating(productFeedback), false);
             }
 
             await ctx.SaveChangesAsync();
