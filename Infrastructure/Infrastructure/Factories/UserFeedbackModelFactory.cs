@@ -2,6 +2,7 @@
 using Infrastructure.Models.EntityModels;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,11 +13,13 @@ public static class UserFeedbackModelFactory
 {
     public static UserFeedbackModel Create(UserFeedbackEntity entity)
     {
-        return new UserFeedbackModel
+        try
         {
-            UserId = entity.UserId,
-            ProductId = entity.ProductId,
-            Review = entity.Review != null
+            return new UserFeedbackModel
+            {
+                UserId = entity.UserId,
+                ProductId = entity.ProductId,
+                Review = entity.Review != null
                     ? new ReviewModel
                     {
                         ReviewTitle = entity.Review.ReviewTitle,
@@ -25,8 +28,11 @@ public static class UserFeedbackModelFactory
                         LastUpdatedDate = entity.Review.LastUpdatedDate,
 
                     } : null,
-            Rating = entity.Rating?.Rating,
+                Rating = entity.Rating?.Rating,
 
-        };
+            };
+        }
+        catch (Exception ex) { Debug.WriteLine(ex.Message); }
+        return null!;
     }
 }

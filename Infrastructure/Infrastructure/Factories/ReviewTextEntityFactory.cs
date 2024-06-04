@@ -2,6 +2,7 @@
 using Infrastructure.Models.EntityModels;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,18 +13,29 @@ public static class ReviewTextEntityFactory
 {
     public static ReviewEntity Create(ReviewModel model)
     {
-        return new ReviewEntity
+        try
         {
-            ReviewTitle = model.ReviewTitle,
-            ReviewText = model.ReviewText,
-        };
+            return new ReviewEntity
+            {
+                ReviewTitle = model.ReviewTitle,
+                ReviewText = model.ReviewText,
+            };
+        }
+        catch (Exception ex) { Debug.WriteLine(ex.Message); }
+        return null!;
     }
 
     public static ReviewEntity Update(ReviewEntity entity, ReviewModel model)
     {
-        entity.ReviewTitle = model.ReviewTitle;
-        entity.ReviewText = model.ReviewText;
-        entity.LastUpdatedDate = DateTime.Now;
-        return entity;
+        try
+        {
+            entity.ReviewTitle = model.ReviewTitle;
+            entity.ReviewText = model.ReviewText;
+            entity.LastUpdatedDate = DateTime.Now;
+            return entity;
+        }
+        catch (Exception ex) { Debug.WriteLine(ex.Message); }
+
+        return entity ?? null!;
     }
 }
