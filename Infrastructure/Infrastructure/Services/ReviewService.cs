@@ -43,7 +43,7 @@ public class ReviewService(FeedbackActionsService feedbackActionsService,
     {
         try
         {
-            if (requestModel.ReviewText == null || requestModel.ReviewTitle == null)
+            if (string.IsNullOrEmpty(requestModel.ReviewText) || string.IsNullOrEmpty(requestModel.ReviewTitle))
                 return ProcessResult.BadRequestResult("Empty reviews are not allowed.");
 
             // Ensure that user exists.

@@ -138,6 +138,7 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
             }
 
             using var ctx = await _feedbackContextFactory.CreateDbContextAsync();
+
             var userFeedbackEntity = await GetOrCreateUserFeedbackEntityAsync(ctx, productId, userId, true);
 
             if (userFeedbackEntity.Review == null)
