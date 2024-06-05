@@ -604,8 +604,6 @@ public class FeedbackActionsServiceTests
 
         // ~==ASSERT==~
 
-        var r = result.First();
-
         // Read in reverse order because descending
         Assert.True(result.Last().Review!.ReviewText == skipReview, "Oldest review is not the one that should be skipped to.");
         Assert.True(result.First().Review!.ReviewText == finalReview, "Newest review is not the last one to be taken.");
