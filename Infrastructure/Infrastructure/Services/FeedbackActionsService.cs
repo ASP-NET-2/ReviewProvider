@@ -132,6 +132,11 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
     {
         try
         {
+            if (model == null || string.IsNullOrEmpty(productId) || string.IsNullOrEmpty(userId))
+            {
+                return false;
+            }
+
             using var ctx = await _feedbackContextFactory.CreateDbContextAsync();
             var userFeedbackEntity = await GetOrCreateUserFeedbackEntityAsync(ctx, productId, userId, true);
 
@@ -165,6 +170,11 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
     {
         try
         {
+            if (model == null || string.IsNullOrEmpty(productId) || string.IsNullOrEmpty(userId))
+            {
+                return false;
+            }
+
             using var ctx = await _feedbackContextFactory.CreateDbContextAsync();
             var userFeedbackEntity = await GetOrCreateUserFeedbackEntityAsync(ctx, productId, userId, true);
 
@@ -230,7 +240,7 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
             if (includeReviews) query = query.Include(x => x.Review);
             if (includeRatings) query = query.Include(x => x.Rating);
 
-            if (startIndex != null) query = query.Skip(startIndex.Value);
+            query = query.Skip(startIndex ?? 0);
             if (takeCount != null) query = query.Take(takeCount.Value);
 
             var list = await query.ToListAsync();
@@ -323,6 +333,8 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
             }
 
             await ctx.SaveChangesAsync();
+
+            return true;
         }
         catch (Exception ex) { Debug.WriteLine(ex.Message); }
 
@@ -361,6 +373,8 @@ public class FeedbackActionsService(UserFeedbackRepository userFeedbackRepo, Rev
             }
 
             await ctx.SaveChangesAsync();
+
+            return true;
         }
         catch (Exception ex) { Debug.WriteLine(ex.Message); }
 

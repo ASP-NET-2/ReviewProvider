@@ -8,8 +8,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="Infrastructure\**" />
+    <Compile Remove="ReviewProviderTests\**" />
     <EmbeddedResource Remove="Infrastructure\**" />
+    <EmbeddedResource Remove="ReviewProviderTests\**" />
     <None Remove="Infrastructure\**" />
+    <None Remove="ReviewProviderTests\**" />
   </ItemGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
