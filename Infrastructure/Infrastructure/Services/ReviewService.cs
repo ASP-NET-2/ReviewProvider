@@ -177,7 +177,7 @@ public class ReviewService(FeedbackActionsService feedbackActionsService,
                 return ProcessResult.OKResult("Successful deletion.");
             }
 
-            return ProcessResult.InternalServerErrorResult("An error occurred while trying to delete.");
+            return ProcessResult.NotFoundResult("Review by user for product could not be found.");
         }
         catch (Exception ex) { return ProduceCatchError(ex).ToGeneric<UserFeedbackModel>(); }
     }
